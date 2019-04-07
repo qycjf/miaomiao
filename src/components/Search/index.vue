@@ -3,13 +3,13 @@
         <div class="search_input">
             <div class="search_input_wrapper">
                 <i class="iconfont icon-sousuo"></i>
-                <input type="text">
+                <input type="text" v-model="message">
             </div>					
         </div>
         <div class="search_result">
             <h3>电影/电视剧/综艺</h3>
             <ul>
-                <li>
+                <!-- <li>
                     <div class="img"><img src="/images/bjs.jpg"></div>
                     <div class="info">
                         <p><span>无名之辈</span><span>8.5</span></p>
@@ -17,32 +17,14 @@
                         <p>剧情,喜剧,犯罪</p>
                         <p>2018-11-16</p>
                     </div>
-                </li>
-                 <li>
-                    <div class="img"><img src="/images/bjs.jpg"></div>
+                </li> -->
+                <li v-for="item in moviesList" :key="item.id">
+                    <div class="img"><img :src="item.img | setWH('128.180')"></div>
                     <div class="info">
-                        <p><span>无名之辈</span><span>8.5</span></p>
-                        <p>A Cool Fish</p>
-                        <p>剧情,喜剧,犯罪</p>
-                        <p>2018-11-16</p>
-                    </div>
-                </li>
-                 <li>
-                    <div class="img"><img src="/images/bjs.jpg"></div>
-                    <div class="info">
-                        <p><span>无名之辈</span><span>8.5</span></p>
-                        <p>A Cool Fish</p>
-                        <p>剧情,喜剧,犯罪</p>
-                        <p>2018-11-16</p>
-                    </div>
-                </li>
-                 <li>
-                    <div class="img"><img src="/images/bjs.jpg"></div>
-                    <div class="info">
-                        <p><span>无名之辈</span><span>8.5</span></p>
-                        <p>A Cool Fish</p>
-                        <p>剧情,喜剧,犯罪</p>
-                        <p>2018-11-16</p>
+                        <p><span>{{item.nm}}</span><span>{{item.sc}}</span></p>
+                        <p>{{item.enm}}</p>
+                        <p>{{item.cat}}</p>
+                        <p>{{item.rt}}</p>
                     </div>
                 </li>
                
@@ -53,7 +35,51 @@
 
 <script>
 export default {
-    name : 'Search'
+    name : 'Search',
+    data(){
+        return {
+            message : '',
+            moviesList : []
+        }
+    },
+    methods : {
+        cancelRequest(){
+            if(typeof this.source ==='function'){
+                this.source('终止请求')
+            }
+        }
+    },
+    watch : {
+        // 监视数据，发生改变就去发送异步请求
+        // 这里做了函数防抖的处理，快速输入时只针对最后一次做处理
+        message(newVal){
+            // console.log(newVal);
+            var that = this;
+            this.cancelRequest();
+            this.axios.get('/api/searchList?cityId=10&kw='+newVal,{
+                cancelToken: new this.axios.CancelToken(function(c){
+                    that.source = c;
+                })
+            }).then((res)=>{
+                console.log(res);
+                // 注意这里是请求成功并且搜索结果有数据才展示
+                var msg=res.data.msg;
+                console.log(msg);
+                var movies = res.data.data.movies;
+                console.log(movies);
+                if(msg&&movies){
+                    this.moviesList=res.data.data.movies.list;
+                }
+            }).catch((err)=>{
+                if (this.axios.isCancel(err)) {
+                    console.log('Rquest canceled', err.message); //请求如果被取消，这里是返回取消的message
+                } else {
+                    //handle error
+                    console.log(err);
+                }
+            });
+        }
+    }
 }
 </script>
 

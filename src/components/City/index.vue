@@ -1,6 +1,6 @@
 <template>
     <div class="city_body">
-        <div class="city_list">
+        <!-- <div class="city_list">
             <div class="city_hot">
                 <h2>热门城市</h2>
                 <ul class="clearfix">
@@ -27,6 +27,29 @@
                 <li>D</li>
                 <li>E</li>
             </ul>
+        </div> -->
+        <div class="city_list">
+            <div class="city_hot">
+                <h2>热门城市</h2>
+                <ul class="clearfix" v-for="item in hotList" :key="item.id">
+                    <li>{{item.nm}}</li>
+                </ul>
+            </div>
+            <div class="city_sort" ref="city_sort">
+                <div v-for="item in cityList" :key="item.index">
+                    <h2>{{item.index}}</h2>
+                    <ul v-for="itemList in item.list" :key="itemList.id">
+                        <li>{{itemList.nm}}</li>
+                    </ul>
+                </div>	
+            </div>
+        </div>
+        <div class="city_index">
+            <ul  class="testul">
+                <!-- <li @touchstart="handleToClick(index)">{{item.index}}</li> -->
+                <li v-for="(item,index) in cityList" :key="item.index" @touchstart="handleToClick(index)" class="testli">{{item.index}}</li>
+                
+            </ul>
         </div>
         
     </div>
@@ -34,12 +57,110 @@
 
 <script>
 export default {
-    name : 'City'   
+    name : 'City',
+    data : () =>{
+        return {
+            cityList: [],
+            hotList: []
+        }
+    },
+    mounted(){
+        // vue-resource不再维护，这里用的是axios,Axios 是一个基于 promise 的 HTTP 库，可以用在浏览器和 node.js 中。
+        //因为已经安装了axios,所以可以用它提供的方法发送请求。
+        this.axios.get('/api/cityList').then((res)=>{
+            console.log(res);
+            var msg = res.data.msg;
+            if(msg === 'ok'){
+                //获取数据并进行自定义设置
+                var cities = res.data.data.cities;
+                // 获取到数据并映射给组件
+                var {cityList,hotList}=this.formatCityList(cities);
+                this.cityList=cityList;
+                this.hotList=hotList;
+                // console.log(cityList);
+            }
+        });
+    },
+    methods : {
+        formatCityList(cities){
+            //分为热门城市和城市列表
+            var cityList = [];
+            var hotList = [];
+            // 思路：遍历数据，首字母作为索引，如果索引为新，则创建一个新的索引跟新的list数组，
+            //这两个是一个整体的对象，如果遍历到的数据的首字母index是已存在的，就把它加到对应已存在
+            //的index对应的list数组中
+            //[ { index : 'A' , list : [{ nm : '阿城' , id : 123 },{ nm:'广州', id: 666}] } ]
+
+            // 获取热门城市列表
+            for(var i =0; i< cities.length; i++){
+                if(cities[i].isHot === 1){
+                    hotList.push(cities[i]);
+                }
+            }
+
+            for(var i=0;i<cities.length;i++){
+                var firstLetter=cities[i].py.substring(0,1).toUpperCase();
+                //先判断索引是否是新的
+                if(toCom(firstLetter)){
+                    //新的，添加到index
+                    cityList.push({ index : firstLetter, list : [{nm : cities[i].nm, id : cities[i].id}] });
+                }else{
+                    //旧的，加入到已存在的index的list中
+                    for(var j=0;j<cityList.length;j++){
+                        if(cityList[j].index === firstLetter){
+                            cityList[j].list.push({ nm : cities[i].nm, id: cities[i].id});
+                        }
+                    }
+                }
+
+
+            }
+            // 排序index
+            cityList.sort((n1,n2) => {
+                if(n1.index>n2.index){
+                    return 1;
+                }else if(n1.index<n2.index){
+                    return -1;
+                }else{
+                    return 0;
+                }
+            });
+            //判断index是否为新的函数
+            function toCom(firstLetter){
+                for(var i=0;i<cityList.length;i++){
+                    if(cityList[i].index === firstLetter){
+                        return false;
+                    }
+                }
+                return true;
+            }
+
+
+
+            // console.log(cityList);
+            // console.log(hotList);
+            return {
+                cityList,
+                hotList
+            };
+
+        },
+        handleToClick(index){
+            //touchstart事件好像不能生效
+            console.log(index);
+            var h2=this.$refs.city_sort.getElementsByTagName('h2');
+            this.$refs.city_sort.parentNode.scrollTop=h2[index].scrollTop;
+        },
+        test() {
+            console.log("?????");
+        }
+        
+    }   
 }
 </script>
 // 下面第一行的样式position那里不知道为什么会导致元素不能显示出来
 <style scoped>
-#content .city_body{ margin-top: 45px; display: flex; width:100%; position: absolute; top: 0; bottom: 0;}
+#content .city_body{ margin-top: 45px; display: flex; width:100%;/* position: absolute; */top: 0; bottom: 0;}
 .city_body .city_list{ flex:1; overflow: auto; background: #FFF5F0;}
 .city_body .city_list::-webkit-scrollbar{
     background-color:transparent;
