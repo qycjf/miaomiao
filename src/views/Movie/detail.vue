@@ -37,7 +37,7 @@
 				</ul>
 			</div> -->
             <div class="detail_list">
-				<div class="detail_list_bg"></div>
+				<div class="detail_list_bg" :style="{'background-image': 'url('+bgurl+')'}"></div>
 				<div class="detail_list_filter"></div>
 				<div class="detail_list_content">
 					<div class="detail_list_img">
@@ -77,7 +77,9 @@ export default {
     data(){
         return {
             detailMovie : {},
-            isLoading : true
+			isLoading : true,
+			//这里把背景的url地址做一些处理，否则报错说replace有问题
+			bgurl : ''
         }
     },
     components : {
@@ -98,7 +100,8 @@ export default {
             if(msg === 'ok'){
 				//这里isLoading的修改位置有要求,否则swiper插件不生效
 				this.isLoading=false;
-                this.detailMovie = res.data.data.detailMovie;
+				this.detailMovie = res.data.data.detailMovie;
+				this.bgurl=this.detailMovie.img ? this.detailMovie.img.replace(/w\.h/,'148.208'): '';
 				// console.log(this.detailMovie.img);
 				//等加载完成再加载swiper插件
 				this.$nextTick(()=>{

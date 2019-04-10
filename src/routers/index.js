@@ -7,6 +7,7 @@ import mineRouter from './mine'
 Vue.use(Router)
 
 export default new Router({
+  //切换路由的方式
   mode: 'history',
   base: process.env.BASE_URL,
   routes: [
