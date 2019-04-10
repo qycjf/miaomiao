@@ -20,7 +20,8 @@
 
             </div>
         <TabBar />
-        
+        <!-- 当一个页面有多个路由时，默认只会匹配一个，其他的不显示，想要其他的也显示，需要做一些设置 -->
+        <router-view name="detail"></router-view>
     </div>
 </template>
 
