@@ -1,7 +1,7 @@
 <template>
     <header id="header">
         <!-- 传值的方式来显示内容 -->
-        <h1>{{title}}</h1>
+        <slot></slot> <h1>{{title}}</h1>
     </header>
 </template>
 
