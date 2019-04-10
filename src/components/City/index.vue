@@ -29,20 +29,25 @@
             </ul>
         </div> -->
         <div class="city_list">
-            <div class="city_hot">
-                <h2>热门城市</h2>
-                <ul class="clearfix" v-for="item in hotList" :key="item.id">
-                    <li>{{item.nm}}</li>
-                </ul>
-            </div>
-            <div class="city_sort" ref="city_sort">
-                <div v-for="item in cityList" :key="item.index">
-                    <h2>{{item.index}}</h2>
-                    <ul v-for="itemList in item.list" :key="itemList.id">
-                        <li>{{itemList.nm}}</li>
-                    </ul>
-                </div>	
-            </div>
+            <Loading v-if="isLoading" />
+            <Scroller v-else ref="city_List">
+                <div>
+                    <div class="city_hot">
+                        <h2>热门城市</h2>
+                        <ul class="clearfix">
+                            <li v-for="item in hotList" :key="item.id" @tap="handleToCity(item.nm , item.id)">{{item.nm}}</li>
+                        </ul>
+                    </div>
+                    <div class="city_sort" ref="city_sort">
+                        <div v-for="item in cityList" :key="item.index">
+                            <h2>{{item.index}}</h2>
+                            <ul>
+                                <li v-for="itemList in item.list" :key="itemList.id" @tap="handleToCity(itemList.nm , itemList.id)">{{itemList.nm}}</li>
+                            </ul>
+                        </div>	
+                    </div>
+                </div>
+            </Scroller>
         </div>
         <div class="city_index">
             <ul  class="testul">
@@ -61,25 +66,43 @@ export default {
     data : () =>{
         return {
             cityList: [],
-            hotList: []
+            hotList: [],
+            isLoading : true
         }
     },
     mounted(){
         // vue-resource不再维护，这里用的是axios,Axios 是一个基于 promise 的 HTTP 库，可以用在浏览器和 node.js 中。
         //因为已经安装了axios,所以可以用它提供的方法发送请求。
-        this.axios.get('/api/cityList').then((res)=>{
-            console.log(res);
-            var msg = res.data.msg;
-            if(msg === 'ok'){
-                //获取数据并进行自定义设置
-                var cities = res.data.data.cities;
-                // 获取到数据并映射给组件
-                var {cityList,hotList}=this.formatCityList(cities);
-                this.cityList=cityList;
-                this.hotList=hotList;
-                // console.log(cityList);
-            }
-        });
+        var cityList = window.localStorage.getItem('cityList');
+        var hotList = window.localStorage.getItem('hotList');
+        if(cityList&&hotList){
+            //如果本地存储有，就直接拿数据
+            this.cityList = JSON.parse(cityList);
+            this.hotList = JSON.parse(hotList);
+            this.isLoading=false;
+        }else{
+            //没有就去请求数据
+            this.axios.get('/api/cityList').then((res)=>{
+                // console.log(res);
+                var msg = res.data.msg;
+                if(msg === 'ok'){
+                    //获取数据并进行自定义设置
+                    this.isLoading=false;
+                    var cities = res.data.data.cities;
+                    // 获取到数据并映射给组件
+                    var {cityList,hotList}=this.formatCityList(cities);
+                    this.cityList=cityList;
+                    this.hotList=hotList;
+                    // console.log(cityList);
+                    // 第一次加载完后可以本地存储起来
+                    window.localStorage.setItem('cityList',JSON.stringify(cityList));
+                    window.localStorage.setItem('hotList',JSON.stringify(hotList));
+                
+                }
+            });
+        }
+
+        
     },
     methods : {
         formatCityList(cities){
@@ -147,20 +170,31 @@ export default {
         },
         handleToClick(index){
             //touchstart事件好像不能生效
-            console.log(index);
+            // console.log(index);
             var h2=this.$refs.city_sort.getElementsByTagName('h2');
-            this.$refs.city_sort.parentNode.scrollTop=h2[index].scrollTop;
+            //this.$refs.city_sort.parentNode.scrollTop=h2[index].offsetTop;
+            // 使用了Scroller组件之后，这篇区域被Scroller接管，需要用它提供的方法,scrollTo方法可以跳到指定的位置
+            //使用方式：先拿到这个组件对象，再调用方法
+            this.$refs.city_list.toScrollTop(-h2[index].offsetTop);
         },
-        test() {
-            console.log("?????");
+        // 注册了tap事件，点击的时候修改状态存储的内容
+        handleToCity(nm,id){
+            this.$store.commit('city/CITY_INFO',{nm , id});
+            //记录下当前的城市进本地存储
+            window.localStorage.setItem('nowNm',nm);
+            window.localStorage.setItem('nowId',id);
+            //利用编程式路由的push方法跳转到正在热映组件
+            this.$router.push('/movie/nowPlaying');
         }
         
     }   
 }
 </script>
 // 下面第一行的样式position那里不知道为什么会导致元素不能显示出来
+</script>
+
 <style scoped>
-#content .city_body{ margin-top: 45px; display: flex; width:100%;/* position: absolute; */top: 0; bottom: 0;}
+#content .city_body{ margin-top: 45px; display: flex; width:100%; /*position: absolute; */top: 0; bottom: 0;}
 .city_body .city_list{ flex:1; overflow: auto; background: #FFF5F0;}
 .city_body .city_list::-webkit-scrollbar{
     background-color:transparent;
