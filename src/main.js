@@ -11,6 +11,13 @@ Vue.prototype.axios = axios;
 Vue.filter('setWH',(url,arg)=>{
   return url.replace(/w\.h/,arg);
 });
+import Scroller from '@/components/Scroller'
+//注册为全局组件，方便使用
+Vue.component('Scroller',Scroller);
+
+import Loading from '@/components/Loading'
+Vue.component('Loading',Loading);
+
 
 Vue.config.productionTip = false
 
